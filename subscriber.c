@@ -98,7 +98,7 @@ int main(int argc, char **argv) {
         poll(poll_fds, 2, -1);
 
         if ((poll_fds[0].revents & POLLIN) != 0) {
-            // tastatura
+            // keyboard
             char temp[100];
 
             fgets(temp, 100, stdin);
@@ -119,7 +119,7 @@ int main(int argc, char **argv) {
                 printf("Unsubscribed from topic.\n");
             }
         } else {
-            // am primit stiri
+            // received news
 
             char buf[1552 + 6] = {'\0'};
             int size;

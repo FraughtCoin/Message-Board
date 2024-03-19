@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
     short port = (short)atoi(argv[1]);
 
 
-    // inceput configurare socket tcp
+    // starting to configure tcp socket
     int socket_tcp;
     struct sockaddr_in server_addr;
     memset(&server_addr, 0, sizeof(struct sockaddr_in));
@@ -80,10 +80,10 @@ int main(int argc, char **argv) {
         return 1;
     }
     listen(socket_tcp, 50);
-    // final configurare socket tcp
+    // ending tcp socket configuration
 
 
-    // incepere confiurare socket udp
+    // starting to configure udp socket
     int socket_udp;
     socket_udp = socket(AF_INET, SOCK_DGRAM, 0);
     
@@ -96,7 +96,7 @@ int main(int argc, char **argv) {
         printf("Bind to UDP failed\n");
         return 1;
     }
-    // final confiurare socket udp
+    // ending udp socket configuration
 
 
     struct pollfd poll_fds[53];
@@ -111,7 +111,6 @@ int main(int argc, char **argv) {
     poll_fds[2].fd = socket_udp;
     poll_fds[2].events = POLLIN;
 
-    // struct subscriber *subscribers = malloc(sizeof(struct subscriber));
     struct subscriber subscribers[100];
     int no_subscribers = 0;
 
@@ -119,7 +118,7 @@ int main(int argc, char **argv) {
         poll(poll_fds, no_fds, -1);
 
         if ((poll_fds[0].revents & POLLIN) != 0) {
-            // am citire de la tastatura
+            // keyboard input
 
             char msg[10];
             scanf("%s", msg);
@@ -131,7 +130,7 @@ int main(int argc, char **argv) {
             }
 
         } else if ((poll_fds[1].revents & POLLIN) != 0) {
-            // am cerere tcp
+            // tcp request
 
             int socket_client;
             struct sockaddr_in client_addr;
@@ -156,9 +155,6 @@ int main(int argc, char **argv) {
             char client_id[11] = {'\0'};
             int size;
             recv_whole_msg(socket_client, client_id, &size);
-
-            // struct in_addr x;
-            // x.s_addr = client_addr.sin_addr.s_addr;
 
             int already_connected = 0;
             for (int i = 0; i < no_subscribers; i++) {
@@ -197,21 +193,16 @@ int main(int argc, char **argv) {
                     struct subscriber new_subscriber;
                     memmove(&new_subscriber.id, client_id, 11);
                     new_subscriber.fd = socket_client;
-                    // new_subscriber.subscribed_topics = malloc(sizeof(struct topic));
                     new_subscriber.no_subscribed_topics = 0;
-                    // new_subscriber.missed_topics = malloc(sizeof(struct topic));
                     new_subscriber.no_missed_topics = 0;
 
                     subscribers[no_subscribers] = new_subscriber;
                     no_subscribers++;
-                    // struct subscribers *temp = realloc(subscribers, (no_subscribers + 1) * sizeof(struct subscriber));
-                    // subscribers = temp;
-
                 }
             }
 
         } else if ((poll_fds[2].revents & POLLIN) != 0) {
-            // am cerere udp
+            // udp request
 
             char buf[1552];
             int len = 0;
@@ -246,16 +237,13 @@ int main(int argc, char **argv) {
                 }
                 for (int j = 0; j < subscribers[i].no_subscribed_topics; j++) {
                     struct topic current_topic = subscribers[i].subscribed_topics[j];
-                    // printf("%s\n", current_topic.name);
                     if (strcmp(topic_name, current_topic.name) == 0) {
-                        // printf("am gasit doamne ajuta\n");
                         char buf_to_send[1552 + 6] = {'\0'};
                         memmove(buf_to_send, &udp_client.sin_addr, 4);
                         memmove(buf_to_send + 4, &udp_client.sin_port, 2);
                         memmove(buf_to_send + 6, buf, len3);
 
                         send_whole_msg(subscribers[i].fd, buf_to_send, len3 + 6);
-
                     }
                 }
             }
@@ -263,17 +251,17 @@ int main(int argc, char **argv) {
 
         
         } else {
-            // am cerere de la un client
+            // request from subscriber
             for (int i = 3; i < no_fds; i++) {
                 if ((poll_fds[i].revents & POLLIN) != 0) {
-                    // am gasit clientul care cere mesaj
+                    // found subscriber
 
                     char buf[100] = {'\0'};
                     int size;
                     recv_whole_msg(poll_fds[i].fd, buf, &size);
 
                     if (size == 0) {
-                        // trebuie deconectat clientul
+                        // disconecting subscriber
                         
                         for (int j = 0; j < no_subscribers; j++) {
                             if (poll_fds[i].fd == subscribers[j].fd) {
@@ -294,9 +282,8 @@ int main(int argc, char **argv) {
                             char *topic_name = buf + 10;
                             for (int j = 0; j < no_subscribers; j++) {
                                 if (subscribers[j].fd == poll_fds[i].fd) {
-                                    // am gasit cel ce a dat cerere de subscribe
+                                    // found who requested to subscribe
 
-                                    // struct subscriber *found_subscriber = subscribers + j;
                                     struct topic new_topic;
 
                                     char *token = strtok(topic_name, " ");
@@ -309,8 +296,6 @@ int main(int argc, char **argv) {
 
                                     subscribers[j].subscribed_topics[subscribers[j].no_subscribed_topics] = new_topic;
                                     subscribers[j].no_subscribed_topics++;
-                                    // struct topic *temp = realloc(found_subscriber.subscribed_topics, (found_subscriber.no_subscribed_topics + 1) * sizeof(struct topic));
-                                    // found_subscriber.subscribed_topics = temp;
                                     break;
                                 }
                             }
